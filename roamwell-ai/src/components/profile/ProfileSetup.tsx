@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useWellnessStore } from '@/lib/store';
 import { UserProfile, FamilyMember } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, Trash2, Users, UserCircle } from 'lucide-react';
+import ThemeToggle from '@/components/theme/ThemeToggle';
 
 const commonConditions = [
   'Diabetes',
@@ -32,6 +34,7 @@ const commonConditions = [
   'Malaria History',
   'Other',
 ];
+
 
 export default function ProfileSetup() {
   const {
@@ -69,8 +72,9 @@ export default function ProfileSetup() {
     isPregnant: false,
   });
 
-  // Custom condition input (for "Other")
+  // Custom condition inputs
   const [customCondition, setCustomCondition] = useState('');
+  const [familyCustomCondition, setFamilyCustomCondition] = useState('');
 
   // ---------- Helpers ----------
   const toggleCondition = (condition: string) => {
@@ -93,6 +97,15 @@ export default function ProfileSetup() {
     setCustomCondition('');
   };
 
+  const addFamilyCustomCondition = () => {
+    if (!familyCustomCondition.trim()) return;
+    setFamilyForm((prev) => ({
+      ...prev,
+      conditions: [...(prev.conditions || []), familyCustomCondition.trim()],
+    }));
+    setFamilyCustomCondition('');
+  };
+
   const handleSaveMainProfile = () => {
     if (formData.name && formData.age && formData.gender) {
       const profile: UserProfile = {
@@ -109,6 +122,7 @@ export default function ProfileSetup() {
       };
       setUserProfile(profile);
       setOpen(false);
+      toast.success('Profile updated successfully!');
     }
   };
 
@@ -137,6 +151,7 @@ export default function ProfileSetup() {
         isPregnant: false,
       });
       setShowFamilyForm(false);
+      toast.success(`Added ${member.name} as a family member.`);
     }
   };
 
@@ -482,6 +497,79 @@ export default function ProfileSetup() {
                 </Label>
               </div>
             )}
+
+            {/* Family Member Conditions */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Pre‑existing Conditions
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                {commonConditions.map((cond) => (
+                  <div key={cond} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`fam-cond-${cond}`}
+                      checked={(familyForm.conditions || []).includes(cond)}
+                      onCheckedChange={() => {
+                        setFamilyForm((prev) => ({
+                          ...prev,
+                          conditions: prev.conditions?.includes(cond)
+                            ? prev.conditions.filter((c) => c !== cond)
+                            : [...(prev.conditions || []), cond],
+                        }));
+                      }}
+                    />
+                    <Label
+                      htmlFor={`fam-cond-${cond}`}
+                      className="text-sm cursor-pointer"
+                    >
+                      {cond}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Input
+                  placeholder="Add other condition..."
+                  value={familyCustomCondition}
+                  onChange={(e) => setFamilyCustomCondition(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addFamilyCustomCondition()}
+                  className="h-9 text-sm"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={addFamilyCustomCondition}
+                >
+                  Add
+                </Button>
+              </div>
+              {familyForm.conditions && familyForm.conditions.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {familyForm.conditions
+                    .filter((c) => !commonConditions.includes(c))
+                    .map((cond) => (
+                      <span
+                        key={cond}
+                        className="inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full text-xs"
+                      >
+                        {cond}
+                        <button
+                          onClick={() =>
+                            setFamilyForm((prev) => ({
+                              ...prev,
+                              conditions: prev.conditions?.filter((c) => c !== cond),
+                            }))
+                          }
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-2 pt-2">
               <Button onClick={handleAddFamilyMember} className="flex-1">
                 Add Member

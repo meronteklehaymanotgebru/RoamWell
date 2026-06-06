@@ -10,7 +10,7 @@ import TravelAdvisor from '@/components/health/TravelAdvisor';
 import BeautySkinModule from '@/components/wellness/BeautySkinModule';
 import { useWellnessStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-
+import ThemeToggle from '@/components/theme/ThemeToggle';
 const EthiopiaMap = dynamic(() => import('@/components/map/ethiopiaMap'), { ssr: false });
 const WellnessBot = dynamic(() => import('@/components/chat/WellnessBot'), { ssr: false });
 
@@ -30,7 +30,7 @@ export default function Home() {
       <aside className="w-64 border-r border-border bg-card/80 backdrop-blur-md flex flex-col shrink-0 shadow-sm">
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-3 mb-2">
-            <Image src="/logo.png" alt="RoamWell" width={32} height={32} className="h-8 w-8" />
+            <Image src="/logo.png" alt="RoamWell" width={40} height={40} className="h-20 w-20" />
             <h1 className="text-xl font-bold text-primary">RoamWell</h1>
           </div>
           <p className="text-xs text-muted-foreground">Know your risk. Protect your health.</p>
@@ -58,8 +58,14 @@ export default function Home() {
           })}
         </nav>
 
-        <div className="p-4 border-t border-border">
+        <div className="p-4 border-t border-border space-y-2">
+            <div className="flex items-center justify-between">
+    <span className="text-xs text-muted-foreground">Theme</span>
+    <ThemeToggle />
+  </div>
+
           <ProfileSetup />
+
         </div>
       </aside>
 
