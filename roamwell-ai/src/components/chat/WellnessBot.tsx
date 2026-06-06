@@ -17,6 +17,7 @@ interface ChatMessage {
 export default function WellnessBot() {
   const {
     selectedRegion,
+    selectedZone,
     userProfile,
     isChatOpen,
     setIsChatOpen,
@@ -58,6 +59,7 @@ export default function WellnessBot() {
           'Content-Type': 'application/json',
           'x-active-profile': JSON.stringify(activeProfile),
           'x-selected-region': selectedRegion || '',
+          'x-selected-zone': selectedZone || '',  // <-- NEW HEADER
         },
         body: JSON.stringify({
           messages: [...messages, userMsg],

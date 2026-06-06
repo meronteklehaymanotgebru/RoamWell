@@ -13,10 +13,13 @@ interface WellnessStore {
 
   selectedRegion: string | null;
   setSelectedRegion: (regionId: string | null) => void;
+  
+  selectedZone: string | null;
+  setSelectedZone: (zoneName: string | null) => void;
+
   isChatOpen: boolean;
   setIsChatOpen: (open: boolean) => void;
 
-  // Travel Advisor persisted state
   travelDestination: string | null;
   setTravelDestination: (regionId: string | null) => void;
   travelChecklist: TravelChecklistItem[];
@@ -62,10 +65,13 @@ export const useWellnessStore = create<WellnessStore>()(
 
       selectedRegion: null,
       setSelectedRegion: (regionId) => set({ selectedRegion: regionId }),
+      
+      selectedZone: null,
+      setSelectedZone: (zoneName) => set({ selectedZone: zoneName }),
+
       isChatOpen: false,
       setIsChatOpen: (open) => set({ isChatOpen: open }),
 
-      // Travel state
       travelDestination: null,
       setTravelDestination: (regionId) => set({ travelDestination: regionId }),
       travelChecklist: [],
@@ -75,10 +81,6 @@ export const useWellnessStore = create<WellnessStore>()(
             typeof updater === 'function' ? updater(state.travelChecklist) : updater,
         })),
     }),
-    {
-      name: 'roamwell-store',
-      // Optional: if you ever need to migrate, you can do it here.
-      // version: 0,
-    }
+    { name: 'roamwell-store' }
   )
 );

@@ -1,6 +1,23 @@
-import { regions } from '@/lib/data';
+import { regions, zoneHealthData, regionDetails, defaultRegionDetails } from '@/lib/data';
 
 export const maxDuration = 30;
+
+function buildZoneSummary(): string {
+  const lines: string[] = [];
+  for (const [zoneName, zone] of Object.entries(zoneHealthData)) {
+    lines.push(
+      `${zone.displayName} (${zone.parentRegion}): ${zone.risks.map(r => r.name).join(', ') || 'None'}`
+    );
+  }
+  return lines.join('\n');
+}
+
+function buildEmergencySummary(regionId: string): string {
+  const details = regionDetails[regionId] || defaultRegionDetails;
+  return details.emergencyContacts
+    .map(c => `${c.name}, ${c.city}: ${c.phone} (${c.type})`)
+    .join('\n');
+}
 
 export async function POST(req: Request) {
   try {
@@ -11,9 +28,9 @@ export async function POST(req: Request) {
       return new Response('Invalid messages', { status: 400 });
     }
 
-    // Read context from headers
     const activeProfileHeader = req.headers.get('x-active-profile');
     const selectedRegion = req.headers.get('x-selected-region') || null;
+    const selectedZone = req.headers.get('x-selected-zone') || null;
 
     const activeProfile = activeProfileHeader
       ? JSON.parse(activeProfileHeader)
@@ -22,28 +39,35 @@ export async function POST(req: Request) {
       ? `Name: ${activeProfile.name}, Age: ${activeProfile.age}, Gender: ${activeProfile.gender}, Conditions: ${activeProfile.conditions?.join(', ') || 'None'}, Pregnant: ${activeProfile.isPregnant || false}`
       : 'No profile set';
 
-    const localDataSummary = regions
-      .map(
-        (r) =>
-          `${r.name}: Altitude ${r.altitude}m, Climate ${r.climate}. Risks: ${r.risks.map((risk) => risk.name).join(', ')}.`
-      )
-      .join('\n');
+    // Build a rich offline knowledge summary
+    const zoneSummary = buildZoneSummary();
+    const emergencyForRegion = selectedRegion
+      ? `\nNEARBY HEALTH FACILITIES:\n${buildEmergencySummary(selectedRegion)}`
+      : '';
+    const zoneInfo = selectedZone
+      ? `\nCURRENT ZONE: ${zoneHealthData[selectedZone]?.displayName || selectedZone} – Risks: ${
+          zoneHealthData[selectedZone]?.risks.map(r => r.name).join(', ')
+        }`
+      : '';
 
     const systemPrompt = `You are the RoamWell AI, an expert health, wellness, and beauty assistant for Ethiopia.
     
 CURRENT PERSON BEING ADVISED: ${profileContext}
 SELECTED REGION: ${selectedRegion || 'No region selected'}
+${zoneInfo}
 
-OFFLINE KNOWLEDGE BASE:
-${localDataSummary}
+OFFLINE KNOWLEDGE BASE – All Ethiopian Zones with Risks:
+${zoneSummary}
+${emergencyForRegion}
 
 RULES:
 - Always suggest Ethiopian traditional remedies (honey, teff, moringa, etc.) when relevant.
-- Tailor advice to the user's profile and region.
+- Tailor advice to the user's profile, region, and zone.
 - Remind users to consult a doctor for serious conditions.
-- Keep responses concise.`;
+- If asked about medical facilities, provide the available emergency contacts.
+- Keep responses concise and friendly.`;
 
-    // Convert UI messages to Groq's expected format
+    // Convert UI messages to Groq's format
     const groqMessages = [
       { role: 'system', content: systemPrompt },
       ...messages.map((m: any) => ({
@@ -80,7 +104,6 @@ RULES:
     if (!groqRes.ok) {
       const errText = await groqRes.text();
       console.error('[RoamWell] Groq error:', errText);
-      // Fallback to a simple JSON response
       return new Response(
         JSON.stringify({
           role: 'assistant',
@@ -91,14 +114,10 @@ RULES:
       );
     }
 
-    // Transform Groq's SSE stream into the format our client expects (plain JSON)
     const reader = groqRes.body?.getReader();
     if (!reader) {
       return new Response(
-        JSON.stringify({
-          role: 'assistant',
-          content: 'No response from AI.',
-        }),
+        JSON.stringify({ role: 'assistant', content: 'No response from AI.' }),
         { headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -128,7 +147,6 @@ RULES:
       reader.releaseLock();
     }
 
-    // Return the complete response as JSON
     return new Response(
       JSON.stringify({ role: 'assistant', content: fullContent }),
       { headers: { 'Content-Type': 'application/json' } }

@@ -30,7 +30,7 @@ export default function Home() {
       <aside className="w-64 border-r border-border bg-card/80 backdrop-blur-md flex flex-col shrink-0 shadow-sm">
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-3 mb-2">
-            <Image src="/logo.png" alt="RoamWell" width={40} height={40} className="h-20 w-20" />
+            <Image src="/logo.png" alt="RoamWell" width={30} height={30} className="h-20 w-20" />
             <h1 className="text-xl font-bold text-primary">RoamWell</h1>
           </div>
           <p className="text-xs text-muted-foreground">Know your risk. Protect your health.</p>
